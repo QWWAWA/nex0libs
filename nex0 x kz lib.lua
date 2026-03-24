@@ -73,6 +73,9 @@ end
 function Library:CreateWindow(config)
     local Window = {}
     config.Name = config.Name or "menu"
+    -- НОВЫЕ ПАРАМЕТРЫ:
+    config.LogoText = config.LogoText or "a m n e s i a"
+    config.LogoImage = config.LogoImage or "https://i.ibb.co/v6zxWBhw/edited-photo.png"
     
     if CoreGui:FindFirstChild("Nex0Library") then CoreGui.Nex0Library:Destroy() end
     local ScreenGui = Create("ScreenGui", { Name = "Nex0Library", Parent = CoreGui })
@@ -94,11 +97,14 @@ function Library:CreateWindow(config)
 
     local LogoFrame = Create("Frame", { Size = UDim2.new(0, 120, 0, 120), Position = UDim2.new(0, 10, 1, -130), BackgroundColor3 = Theme.Background, Parent = Sidebar })
     Create("UIStroke", { Parent = LogoFrame, Color = Theme.Outline, Thickness = 1 })
-    Create("TextLabel", { Size = UDim2.new(1, 0, 0, 20), Position = UDim2.new(0, 0, 1, -25), BackgroundTransparency = 1, Text = "a m n e s i a", TextColor3 = Theme.Accent, Font = Theme.Font, TextSize = 13, Parent = LogoFrame })
     
+    -- ТЕКСТ ЛОГОТИПА ИЗ КОНФИГА:
+    Create("TextLabel", { Size = UDim2.new(1, 0, 0, 20), Position = UDim2.new(0, 0, 1, -25), BackgroundTransparency = 1, Text = config.LogoText, TextColor3 = Theme.Accent, Font = Theme.Font, TextSize = 13, Parent = LogoFrame })
+    
+    -- КАРТИНКА ИЗ КОНФИГА И ВСЕГДА БЕЛАЯ:
     local LogoImage = Create("ImageLabel", { Size = UDim2.new(0, 75, 0, 75), Position = UDim2.new(0.5, -37.5, 0, 12), BackgroundTransparency = 1, ImageColor3 = Color3.fromRGB(255, 255, 255), ScaleType = Enum.ScaleType.Fit, Parent = LogoFrame })
     task.spawn(function()
-        local s, d = pcall(function() return game:HttpGet("https://i.ibb.co/v6zxWBhw/edited-photo.png") end)
+        local s, d = pcall(function() return game:HttpGet(config.LogoImage) end)
         if s and d then pcall(function() writefile("nex0_logo_custom.png", d) LogoImage.Image = getcustomasset("nex0_logo_custom.png") end) end
     end)
 
@@ -184,14 +190,14 @@ function Library:CreateWindow(config)
                         elseif input.UserInputType == Enum.UserInputType.MouseButton3 and hasKeybind then
                             isBinding = true
                             KBText.Text = "..."
-                            Library:Notify("Press any key to bind [" .. text .. "]", 2)
+                            Library:Notify("Press any key to bind[" .. text .. "]", 2)
                         end
                     end)
 
                     if hasKeybind then
                         local conn
                         conn = UserInputService.InputBegan:Connect(function(input, gpe)
-                            if not ToggleFrame.Parent then conn:Disconnect() return end -- Очистка памяти если меню удалено
+                            if not ToggleFrame.Parent then conn:Disconnect() return end 
 
                             if isBinding then
                                 if input.UserInputType == Enum.UserInputType.Keyboard then
