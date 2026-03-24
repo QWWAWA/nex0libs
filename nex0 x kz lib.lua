@@ -1,7 +1,6 @@
 local Library = {}
 local CoreGui = game:GetService("CoreGui")
 local UserInputService = game:GetService("UserInputService")
-local TweenService = game:GetService("TweenService")
 local Players = game:GetService("Players")
 local Mouse = Players.LocalPlayer:GetMouse()
 
@@ -33,7 +32,8 @@ function Library:CreateWindow(config)
         Size = UDim2.new(0, 680, 0, 430),
         Position = UDim2.new(0.5, -340, 0.5, -215),
         BackgroundColor3 = Theme.Background,
-        BorderSizePixel = 0, Parent = ScreenGui, Active = true, Draggable = true
+        BorderSizePixel = 0, Parent = ScreenGui, Active = true, Draggable = true,
+        ClipsDescendants = true -- Защита от вылезающих элементов
     })
     Create("UIStroke", { Parent = MainFrame, Color = Theme.Outline, Thickness = 1 })
     
@@ -52,32 +52,50 @@ function Library:CreateWindow(config)
     Create("Frame", { Size = UDim2.new(0, 1, 1, 0), Position = UDim2.new(1, 0, 0, 0), BackgroundColor3 = Theme.Outline, BorderSizePixel = 0, Parent = Sidebar })
     local ContentArea = Create("Frame", { Size = UDim2.new(1, -141, 1, -27), Position = UDim2.new(0, 141, 0, 27), BackgroundTransparency = 1, Parent = MainFrame })
 
+    -- Контейнер для вкладок (чтобы они не ломали позицию логотипа)
+    local TabsContainer = Create("Frame", { Size = UDim2.new(1, 0, 1, -140), Position = UDim2.new(0, 0, 0, 15), BackgroundTransparency = 1, Parent = Sidebar })
+
     -- Logo Area
     local LogoFrame = Create("Frame", { Size = UDim2.new(0, 120, 0, 120), Position = UDim2.new(0, 10, 1, -130), BackgroundColor3 = Theme.Background, Parent = Sidebar })
     Create("UIStroke", { Parent = LogoFrame, Color = Theme.Outline, Thickness = 1 })
     Create("TextLabel", { Size = UDim2.new(1, 0, 0, 20), Position = UDim2.new(0, 0, 1, -30), BackgroundTransparency = 1, Text = "a m n e s i a", TextColor3 = Theme.Accent, Font = Theme.Font, TextSize = 14, Parent = LogoFrame })
     
-    -- Logo Icon (Simplified Moon/Star representation)
-    local Star = Create("TextLabel", { Size = UDim2.new(1, 0, 0, 60), Position = UDim2.new(0, 0, 0, 15), BackgroundTransparency = 1, Text = "❂", TextColor3 = Theme.Accent, Font = Enum.Font.Gotham, TextSize = 50, Parent = LogoFrame })
-    Create("TextLabel", { Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, Text = "🌙", TextColor3 = Theme.Background, Font = Enum.Font.Gotham, TextSize = 25, Parent = Star })
+    -- КАРТИНКА ЛОГОТИПА
+    local LogoImage = Create("ImageLabel", { 
+        Size = UDim2.new(0, 60, 0, 60), 
+        Position = UDim2.new(0.5, -30, 0, 15), 
+        BackgroundTransparency = 1, 
+        ImageColor3 = Color3.fromRGB(255, 255, 255), -- Полностью белая
+        ScaleType = Enum.ScaleType.Fit, 
+        Parent = LogoFrame 
+    })
 
-    local TabsLayout = Create("UIListLayout", { Parent = Sidebar, SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 5) })
-    Create("UIPadding", { Parent = Sidebar, PaddingTop = UDim.new(0, 15) })
+    -- Асинхронная загрузка картинки по ссылке
+    task.spawn(function()
+        local success, imgData = pcall(function() return game:HttpGet("https://i.ibb.co/v6zxWBhw/edited-photo.png") end)
+        if success and imgData then
+            pcall(function()
+                writefile("nex0_logo_custom.png", imgData)
+                LogoImage.Image = getcustomasset("nex0_logo_custom.png")
+            end)
+        end
+    end)
 
     Window.Tabs = {}
     local currentTab = nil
 
     function Window:AddTab(name)
         local Tab = { SubTabs = {} }
+        local tabCount = #Window.Tabs
         
-        local TabBtn = Create("TextButton", { Size = UDim2.new(1, 0, 0, 25), BackgroundTransparency = 1, Text = "  " .. name, TextColor3 = Theme.TextDark, Font = Theme.Font, TextSize = 14, TextXAlignment = Enum.TextXAlignment.Left, Parent = Sidebar })
+        -- Используем жесткие координаты вместо UIListLayout для надежности
+        local TabBtn = Create("TextButton", { Size = UDim2.new(1, 0, 0, 25), Position = UDim2.new(0, 0, 0, tabCount * 30), BackgroundTransparency = 1, Text = "  " .. name, TextColor3 = Theme.TextDark, Font = Theme.Font, TextSize = 14, TextXAlignment = Enum.TextXAlignment.Left, Parent = TabsContainer })
         local ActiveLine = Create("Frame", { Size = UDim2.new(0, 2, 1, -8), Position = UDim2.new(0, 15, 0, 4), BackgroundColor3 = Theme.Accent, BorderSizePixel = 0, Visible = false, Parent = TabBtn })
         
         local TabContainer = Create("Frame", { Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, Visible = false, Parent = ContentArea })
         
         local SubTabsContainer = Create("Frame", { Size = UDim2.new(1, 0, 0, 30), BackgroundTransparency = 1, Parent = TabContainer })
         Create("Frame", { Size = UDim2.new(1, 0, 0, 1), Position = UDim2.new(0, 0, 1, 0), BackgroundColor3 = Theme.Outline, BorderSizePixel = 0, Parent = SubTabsContainer })
-        local SubTabsLayout = Create("UIListLayout", { Parent = SubTabsContainer, FillDirection = Enum.FillDirection.Horizontal, SortOrder = Enum.SortOrder.LayoutOrder })
 
         local GroupboxesContainer = Create("Frame", { Size = UDim2.new(1, 0, 1, -30), Position = UDim2.new(0, 0, 0, 30), BackgroundTransparency = 1, Parent = TabContainer })
 
@@ -93,16 +111,17 @@ function Library:CreateWindow(config)
             TabContainer.Visible = true
         end)
 
-        if #Window.Tabs == 0 then TabBtn = TabBtn; TabBtn.TextColor3 = Theme.TextWhite; ActiveLine.Visible = true; TabContainer.Visible = true; currentTab = { Btn = TabBtn, Line = ActiveLine, Container = TabContainer } end
+        if #Window.Tabs == 0 then TabBtn.TextColor3 = Theme.TextWhite; ActiveLine.Visible = true; TabContainer.Visible = true; currentTab = { Btn = TabBtn, Line = ActiveLine, Container = TabContainer } end
         table.insert(Window.Tabs, Tab)
 
         local currentSubTab = nil
 
         function Tab:AddSubTab(subName)
             local SubTab = {}
-            local width = 1 / 3 -- Ограничим визуально на 3 сабтаба для дизайна
+            local subCount = #Tab.SubTabs
             
-            local STabBtn = Create("TextButton", { Size = UDim2.new(width, 0, 1, 0), BackgroundTransparency = 1, Text = subName, TextColor3 = Theme.TextDark, Font = Theme.Font, TextSize = 14, Parent = SubTabsContainer })
+            -- Жесткие координаты по горизонтали для SubTabs
+            local STabBtn = Create("TextButton", { Size = UDim2.new(1/3, 0, 1, 0), Position = UDim2.new((1/3) * subCount, 0, 0, 0), BackgroundTransparency = 1, Text = subName, TextColor3 = Theme.TextDark, Font = Theme.Font, TextSize = 14, Parent = SubTabsContainer })
             local SActiveLine = Create("Frame", { Size = UDim2.new(0.6, 0, 0, 2), Position = UDim2.new(0.2, 0, 1, -1), BackgroundColor3 = Theme.Accent, BorderSizePixel = 0, Visible = false, Parent = STabBtn })
             
             local STabContainer = Create("Frame", { Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, Visible = false, Parent = GroupboxesContainer })
@@ -179,7 +198,7 @@ function Library:CreateWindow(config)
                     UserInputService.InputChanged:Connect(function(input)
                         if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
                             local pct = math.clamp((Mouse.X - Track.AbsolutePosition.X) / Track.AbsoluteSize.X, 0, 1)
-                            val = math.floor(min + ((max - min) * pct) * 10) / 10 -- Округление до 1 знака
+                            val = math.floor(min + ((max - min) * pct) * 10) / 10
                             Fill.Size = UDim2.new(pct, 0, 1, 0)
                             ValBg.Position = UDim2.new(pct, -15, 0, -4)
                             ValText.Text = tostring(val)
