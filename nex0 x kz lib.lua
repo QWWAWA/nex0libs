@@ -48,6 +48,10 @@ end
 
 function Library:CreateWindow(config)
     local Window = { Tabs = {} }
+    config.Name = config.Name or "menu"
+    config.LogoText = config.LogoText or "a m n e s i a"
+    config.LogoImage = config.LogoImage or "https://i.ibb.co/v6zxWBhw/edited-photo.png"
+    
     if CoreGui:FindFirstChild("Nex0Library") then CoreGui.Nex0Library:Destroy() end
     local ScreenGui = Create("ScreenGui", { Name = "Nex0Library", Parent = CoreGui })
     
@@ -57,12 +61,25 @@ function Library:CreateWindow(config)
     local TopBar = Create("Frame", { Size = UDim2.new(1, 0, 0, 25), BackgroundColor3 = Theme.Background, BorderSizePixel = 0, Parent = MainFrame })
     Create("Frame", { Size = UDim2.new(1, 0, 0, 1), Position = UDim2.new(0, 0, 1, 0), BackgroundColor3 = Theme.Outline, BorderSizePixel = 0, Parent = TopBar })
     Create("Frame", { Size = UDim2.new(1, 0, 0, 1), Position = UDim2.new(0, 0, 1, 1), BackgroundColor3 = Theme.Accent, BorderSizePixel = 0, Parent = TopBar })
-    Create("TextLabel", { Size = UDim2.new(0.5, 0, 1, 0), Position = UDim2.new(0, 10, 0, 0), BackgroundTransparency = 1, Text = config.Name or "menu", TextColor3 = Theme.TextWhite, Font = Theme.Font, TextSize = 13, TextXAlignment = Enum.TextXAlignment.Left, Parent = TopBar })
+    
+    -- ВОЗВРАЩЕНО: Оригинальный текст названия и Дата
+    Create("TextLabel", { Size = UDim2.new(0.5, 0, 1, 0), Position = UDim2.new(0, 10, 0, 0), BackgroundTransparency = 1, Text = config.Name, TextColor3 = Theme.TextWhite, Font = Theme.Font, TextSize = 13, TextXAlignment = Enum.TextXAlignment.Left, Parent = TopBar })
+    Create("TextLabel", { Size = UDim2.new(0.5, 0, 1, 0), Position = UDim2.new(0.5, -10, 0, 0), BackgroundTransparency = 1, Text = os.date("%A, %d %b %Y"):lower(), TextColor3 = Theme.TextDark, Font = Theme.Font, TextSize = 13, TextXAlignment = Enum.TextXAlignment.Right, Parent = TopBar })
 
     local Sidebar = Create("Frame", { Size = UDim2.new(0, 140, 1, -27), Position = UDim2.new(0, 0, 0, 27), BackgroundTransparency = 1, Parent = MainFrame })
     Create("Frame", { Size = UDim2.new(0, 1, 1, 0), Position = UDim2.new(1, 0, 0, 0), BackgroundColor3 = Theme.Outline, BorderSizePixel = 0, Parent = Sidebar })
     local ContentArea = Create("Frame", { Size = UDim2.new(1, -141, 1, -27), Position = UDim2.new(0, 141, 0, 27), BackgroundTransparency = 1, Parent = MainFrame })
     local TabsContainer = Create("Frame", { Size = UDim2.new(1, 0, 1, -140), Position = UDim2.new(0, 0, 0, 15), BackgroundTransparency = 1, Parent = Sidebar })
+
+    -- ВОЗВРАЩЕНО: Блок с Логотипом (Старое меню)
+    local LogoFrame = Create("Frame", { Size = UDim2.new(0, 120, 0, 120), Position = UDim2.new(0, 10, 1, -130), BackgroundColor3 = Theme.Background, Parent = Sidebar })
+    Create("UIStroke", { Parent = LogoFrame, Color = Theme.Outline, Thickness = 1 })
+    Create("TextLabel", { Size = UDim2.new(1, 0, 0, 20), Position = UDim2.new(0, 0, 1, -25), BackgroundTransparency = 1, Text = config.LogoText, TextColor3 = Theme.Accent, Font = Theme.Font, TextSize = 13, Parent = LogoFrame })
+    local LogoImage = Create("ImageLabel", { Size = UDim2.new(0, 75, 0, 75), Position = UDim2.new(0.5, -37.5, 0, 12), BackgroundTransparency = 1, ImageColor3 = Color3.fromRGB(255, 255, 255), ScaleType = Enum.ScaleType.Fit, Parent = LogoFrame })
+    task.spawn(function()
+        local s, d = pcall(function() return game:HttpGet(config.LogoImage) end)
+        if s and d then pcall(function() writefile("nex0_logo_custom.png", d) LogoImage.Image = getcustomasset("nex0_logo_custom.png") end) end
+    end)
 
     local currentTab = nil
     function Window:AddTab(name)
@@ -146,6 +163,7 @@ function Library:CreateWindow(config)
                     task.spawn(function() callback(val) end)
                 end
 
+                -- НОВЫЙ 2D COLOR PICKER
                 function GroupBox:AddColorPicker(text, defaultColor, callback)
                     local color = defaultColor or Color3.fromRGB(255, 255, 255)
                     local h, s, v = Color3.toHSV(color)
@@ -156,33 +174,63 @@ function Library:CreateWindow(config)
                     local Preview = Create("Frame", { Size = UDim2.new(0, 24, 0, 12), Position = UDim2.new(1, -24, 0, 4), BackgroundColor3 = color, Parent = TopBtn })
                     Create("UIStroke", { Parent = Preview, Color = Theme.Outline, Thickness = 1 })
 
-                    local SlidersArea = Create("Frame", { Size = UDim2.new(1, 0, 0, 60), Position = UDim2.new(0, 0, 0, 25), BackgroundTransparency = 1, Parent = CPContainer })
+                    local PickerArea = Create("Frame", { Size = UDim2.new(1, 0, 0, 80), Position = UDim2.new(0, 0, 0, 25), BackgroundTransparency = 1, Parent = CPContainer })
                     
-                    local function createCSlider(yPos, isH, isS, isV)
-                        local Track = Create("TextButton", { Size = UDim2.new(1, 0, 0, 8), Position = UDim2.new(0, 0, 0, yPos), BackgroundColor3 = Theme.ElementBg, Text = "", Parent = SlidersArea })
-                        local Marker = Create("Frame", { Size = UDim2.new(0, 4, 0, 12), Position = UDim2.new(isH and h or isS and s or v, -2, 0, -2), BackgroundColor3 = Theme.Accent, Parent = Track })
-                        local dragging = false
-                        Track.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 then dragging = true end end)
-                        UserInputService.InputEnded:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end end)
-                        UserInputService.InputChanged:Connect(function(i)
-                            if dragging and i.UserInputType == Enum.UserInputType.MouseMovement then
-                                local pct = math.clamp((Mouse.X - Track.AbsolutePosition.X) / Track.AbsoluteSize.X, 0, 1)
-                                Marker.Position = UDim2.new(pct, -2, 0, -2)
-                                if isH then h = pct elseif isS then s = pct else v = pct end
-                                color = Color3.fromHSV(h, s, v)
-                                Preview.BackgroundColor3 = color
-                                callback(color)
-                            end
-                        end)
+                    -- SV Карта (2D Квадрат)
+                    local SVBox = Create("TextButton", { Size = UDim2.new(1, -20, 1, 0), Position = UDim2.new(0, 0, 0, 0), BackgroundColor3 = Color3.fromHSV(h, 1, 1), Text = "", AutoButtonColor = false, Parent = PickerArea })
+                    Create("UIStroke", { Parent = SVBox, Color = Theme.Outline, Thickness = 1 })
+                    
+                    local WhiteGrad = Create("Frame", { Size = UDim2.new(1, 0, 1, 0), BackgroundColor3 = Color3.new(1, 1, 1), BorderSizePixel = 0, Parent = SVBox })
+                    Create("UIGradient", { Parent = WhiteGrad, Color = ColorSequence.new({ColorSequenceKeypoint.new(0, Color3.new(1,1,1)), ColorSequenceKeypoint.new(1, Color3.new(1,1,1))}), Transparency = NumberSequence.new({NumberSequenceKeypoint.new(0, 0), NumberSequenceKeypoint.new(1, 1)}) }) 
+                    
+                    local BlackGrad = Create("Frame", { Size = UDim2.new(1, 0, 1, 0), BackgroundColor3 = Color3.new(0, 0, 0), BorderSizePixel = 0, Parent = SVBox })
+                    Create("UIGradient", { Parent = BlackGrad, Rotation = 90, Color = ColorSequence.new({ColorSequenceKeypoint.new(0, Color3.new(0,0,0)), ColorSequenceKeypoint.new(1, Color3.new(0,0,0))}), Transparency = NumberSequence.new({NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(1, 0)}) }) 
+                    
+                    local SVCursor = Create("Frame", { Size = UDim2.new(0, 4, 0, 4), BackgroundColor3 = Color3.new(1,1,1), AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(s, 0, 1-v, 0), Parent = SVBox })
+                    Create("UIStroke", { Parent = SVCursor, Color = Color3.new(0,0,0), Thickness = 1 })
+                    Create("UICorner", { Parent = SVCursor, CornerRadius = UDim.new(1, 0) })
+
+                    -- Hue Слайдер (Радужная полоска)
+                    local HueBox = Create("TextButton", { Size = UDim2.new(0, 12, 1, 0), Position = UDim2.new(1, -12, 0, 0), BackgroundColor3 = Color3.new(1,1,1), Text = "", AutoButtonColor = false, Parent = PickerArea })
+                    Create("UIStroke", { Parent = HueBox, Color = Theme.Outline, Thickness = 1 })
+                    Create("UIGradient", { Parent = HueBox, Rotation = 90, Color = ColorSequence.new({
+                        ColorSequenceKeypoint.new(0, Color3.new(1,0,0)), ColorSequenceKeypoint.new(0.166, Color3.new(1,1,0)),
+                        ColorSequenceKeypoint.new(0.333, Color3.new(0,1,0)), ColorSequenceKeypoint.new(0.5, Color3.new(0,1,1)),
+                        ColorSequenceKeypoint.new(0.666, Color3.new(0,0,1)), ColorSequenceKeypoint.new(0.833, Color3.new(1,0,1)),
+                        ColorSequenceKeypoint.new(1, Color3.new(1,0,0))
+                    })})
+                    local HueCursor = Create("Frame", { Size = UDim2.new(1, 2, 0, 2), Position = UDim2.new(0, -1, h, 0), AnchorPoint = Vector2.new(0, 0.5), BackgroundColor3 = Color3.new(1,1,1), BorderSizePixel = 0, Parent = HueBox })
+                    Create("UIStroke", { Parent = HueCursor, Color = Color3.new(0,0,0), Thickness = 1 })
+
+                    local function UpdateColor()
+                        color = Color3.fromHSV(h, s, v)
+                        Preview.BackgroundColor3 = color
+                        SVBox.BackgroundColor3 = Color3.fromHSV(h, 1, 1)
+                        SVCursor.Position = UDim2.new(s, 0, 1-v, 0)
+                        HueCursor.Position = UDim2.new(0, -1, h, 0)
+                        callback(color)
                     end
-                    createCSlider(0, true, false, false); createCSlider(20, false, true, false); createCSlider(40, false, false, true)
+
+                    local draggingSV, draggingHue = false, false
+                    
+                    SVBox.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 then draggingSV = true; s = math.clamp((Mouse.X - SVBox.AbsolutePosition.X) / SVBox.AbsoluteSize.X, 0, 1); v = 1 - math.clamp((Mouse.Y - SVBox.AbsolutePosition.Y) / SVBox.AbsoluteSize.Y, 0, 1); UpdateColor() end end)
+                    HueBox.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 then draggingHue = true; h = math.clamp((Mouse.Y - HueBox.AbsolutePosition.Y) / HueBox.AbsoluteSize.Y, 0, 1); UpdateColor() end end)
+                    
+                    UserInputService.InputEnded:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 then draggingSV = false; draggingHue = false end end)
+                    
+                    UserInputService.InputChanged:Connect(function(i)
+                        if i.UserInputType == Enum.UserInputType.MouseMovement then
+                            if draggingSV then s = math.clamp((Mouse.X - SVBox.AbsolutePosition.X) / SVBox.AbsoluteSize.X, 0, 1); v = 1 - math.clamp((Mouse.Y - SVBox.AbsolutePosition.Y) / SVBox.AbsoluteSize.Y, 0, 1); UpdateColor() end
+                            if draggingHue then h = math.clamp((Mouse.Y - HueBox.AbsolutePosition.Y) / HueBox.AbsoluteSize.Y, 0, 1); UpdateColor() end
+                        end
+                    end)
 
                     local open = false
                     TopBtn.MouseButton1Click:Connect(function()
                         open = not open
-                        Tween(CPContainer, {Size = UDim2.new(1, 0, 0, open and 85 or 20)}, 0.2)
+                        Tween(CPContainer, {Size = UDim2.new(1, 0, 0, open and 110 or 20)}, 0.2)
                     end)
-                    task.spawn(function() callback(color) end)
+                    task.spawn(function() UpdateColor() end)
                 end
 
                 function GroupBox:AddListBox(items, defaultIdx, callback)
