@@ -14,7 +14,6 @@ local Theme = {
     ElementBg = Color3.fromRGB(20, 20, 22), Font = Enum.Font.RobotoMono
 }
 
--- Таблица для хранения элементов, которые должны менять цвет при смене темы
 local ColoredElements = { Backgrounds = {}, Texts = {} }
 
 local function Create(className, properties)
@@ -23,11 +22,10 @@ local function Create(className, properties)
     return inst
 end
 
-local function Tween(instance, properties, duration)
+local function TweenUI(instance, properties, duration)
     TweenService:Create(instance, TweenInfo.new(duration or 0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), properties):Play()
 end
 
--- Система уведомлений
 if CoreGui:FindFirstChild("Nex0NotifyGui") then CoreGui.Nex0NotifyGui:Destroy() end
 local NotifyGui = Create("ScreenGui", { Name = "Nex0NotifyGui", Parent = CoreGui })
 local NotifyContainer = Create("Frame", { Size = UDim2.new(0, 220, 1, -40), Position = UDim2.new(1, -240, 0, 20), BackgroundTransparency = 1, Parent = NotifyGui })
@@ -39,90 +37,75 @@ function Library:Notify(text, duration)
         local Notif = Create("Frame", { Size = UDim2.new(1, 0, 0, 35), BackgroundColor3 = Theme.Background, BackgroundTransparency = 1, Parent = NotifyContainer })
         local Stroke = Create("UIStroke", { Parent = Notif, Color = Theme.Outline, Thickness = 1, Transparency = 1 })
         local Line = Create("Frame", { Size = UDim2.new(0, 2, 1, 0), BackgroundColor3 = Theme.Accent, BorderSizePixel = 0, Parent = Notif, BackgroundTransparency = 1 })
-        table.insert(ColoredElements.Backgrounds, Line) -- Добавляем в регистр для смены темы
-        
+        table.insert(ColoredElements.Backgrounds, Line)
         local Label = Create("TextLabel", { Size = UDim2.new(1, -15, 1, 0), Position = UDim2.new(0, 10, 0, 0), BackgroundTransparency = 1, Text = text, TextColor3 = Theme.TextWhite, Font = Theme.Font, TextSize = 13, TextXAlignment = Enum.TextXAlignment.Left, Parent = Notif, TextTransparency = 1 })
         
-        Tween(Notif, {BackgroundTransparency = 0}, 0.3); Tween(Stroke, {Transparency = 0}, 0.3)
-        Tween(Line, {BackgroundTransparency = 0}, 0.3); Tween(Label, {TextTransparency = 0}, 0.3)
-        
+        TweenUI(Notif, {BackgroundTransparency = 0}, 0.3); TweenUI(Stroke, {Transparency = 0}, 0.3)
+        TweenUI(Line, {BackgroundTransparency = 0}, 0.3); TweenUI(Label, {TextTransparency = 0}, 0.3)
         task.wait(duration)
-        Tween(Notif, {BackgroundTransparency = 1}, 0.3); Tween(Stroke, {Transparency = 1}, 0.3)
-        Tween(Line, {BackgroundTransparency = 1}, 0.3); Tween(Label, {TextTransparency = 1}, 0.3)
+        TweenUI(Notif, {BackgroundTransparency = 1}, 0.3); TweenUI(Stroke, {Transparency = 1}, 0.3)
+        TweenUI(Line, {BackgroundTransparency = 1}, 0.3); TweenUI(Label, {TextTransparency = 1}, 0.3)
         task.wait(0.3); Notif:Destroy()
     end)
 end
 
 function Library:CreateWindow(config)
     local Window = { Tabs = {}, ToggleKey = config.ToggleKey or Enum.KeyCode.RightShift }
-    config.Name = config.Name or "menu"
-    config.LogoText = config.LogoText or "a m n e s i a"
-    config.LogoImage = config.LogoImage or "https://i.ibb.co/v6zxWBhw/edited-photo.png"
-    config.ShowLoading = config.ShowLoading ~= false -- Включено по умолчанию
+    config.ShowLoading = config.ShowLoading ~= false
+    config.SpinnerImage = config.SpinnerImage or "rbxassetid://10008518402"
     
-    if config.Theme then
-        for k, v in pairs(config.Theme) do Theme[k] = v end
-    end
-
     if CoreGui:FindFirstChild("Nex0Library") then CoreGui.Nex0Library:Destroy() end
     local ScreenGui = Create("ScreenGui", { Name = "Nex0Library", Parent = CoreGui, IgnoreGuiInset = true, Enabled = false })
     
-    -- === ЭКРАН ЗАГРУЗКИ ===
     if config.ShowLoading then
         local LoadGui = Create("ScreenGui", { Name = "Nex0LoadGui", Parent = CoreGui, IgnoreGuiInset = true })
+        
+        -- ФОНОВАЯ КАРТИНКА (ЕСЛИ УКАЗАНА)
+        local BgImg = Create("ImageLabel", { Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, ScaleType = Enum.ScaleType.Crop, ImageTransparency = 1, Parent = LoadGui })
+        if config.LoadingBackgroundImage then BgImg.Image = config.LoadingBackgroundImage end
+
         local Overlay = Create("Frame", { Size = UDim2.new(1, 0, 1, 0), BackgroundColor3 = Color3.new(0,0,0), BackgroundTransparency = 1, Parent = LoadGui })
         local LoadBox = Create("Frame", { Size = UDim2.new(0, 300, 0, 100), Position = UDim2.new(0.5, -150, 0.5, -50), BackgroundColor3 = Theme.Background, BackgroundTransparency = 1, Parent = LoadGui })
         local LoadStroke = Create("UIStroke", { Parent = LoadBox, Color = Theme.Outline, Thickness = 1, Transparency = 1 })
         
         local LoadText = Create("TextLabel", { Size = UDim2.new(1, 0, 0, 30), Position = UDim2.new(0, 0, 0, 10), BackgroundTransparency = 1, Text = "loading: 0%", TextColor3 = Theme.Accent, Font = Theme.Font, TextSize = 14, TextTransparency = 1, Parent = LoadBox })
-        
-        -- Прогресс бар
         local BarBg = Create("Frame", { Size = UDim2.new(1, -40, 0, 6), Position = UDim2.new(0, 20, 0, 60), BackgroundColor3 = Theme.ElementBg, BorderSizePixel = 0, BackgroundTransparency = 1, Parent = LoadBox })
         local BarFill = Create("Frame", { Size = UDim2.new(0, 0, 1, 0), BackgroundColor3 = Theme.Accent, BorderSizePixel = 0, BackgroundTransparency = 1, Parent = BarBg })
         
-        -- Спиннер
-        local Spinner = Create("ImageLabel", { Size = UDim2.new(0, 20, 0, 20), Position = UDim2.new(0, 20, 1, -25), BackgroundTransparency = 1, Image = "rbxassetid://10008518402", ImageColor3 = Theme.Accent, ImageTransparency = 1, AnchorPoint = Vector2.new(0.5, 0.5), Parent = LoadBox })
-        Spinner.Position = UDim2.new(0, 30, 0, 25) -- Перенос спиннера влево к тексту
+        local Spinner = Create("ImageLabel", { Size = UDim2.new(0, 20, 0, 20), Position = UDim2.new(0, 30, 0, 25), BackgroundTransparency = 1, Image = config.SpinnerImage, ImageColor3 = Theme.Accent, ImageTransparency = 1, AnchorPoint = Vector2.new(0.5, 0.5), Parent = LoadBox })
 
-        -- Анимация появления
-        Tween(Overlay, {BackgroundTransparency = 0.4}, 0.5)
-        Tween(LoadBox, {BackgroundTransparency = 0}, 0.5); Tween(LoadStroke, {Transparency = 0}, 0.5)
-        Tween(LoadText, {TextTransparency = 0}, 0.5); Tween(BarBg, {BackgroundTransparency = 0}, 0.5); Tween(BarFill, {BackgroundTransparency = 0}, 0.5)
-        Tween(Spinner, {ImageTransparency = 0}, 0.5)
+        if config.LoadingBackgroundImage then TweenUI(BgImg, {ImageTransparency = 0}, 0.5) end
+        TweenUI(Overlay, {BackgroundTransparency = config.LoadingBackgroundImage and 0.2 or 0.4}, 0.5)
+        TweenUI(LoadBox, {BackgroundTransparency = 0}, 0.5); TweenUI(LoadStroke, {Transparency = 0}, 0.5)
+        TweenUI(LoadText, {TextTransparency = 0}, 0.5); TweenUI(BarBg, {BackgroundTransparency = 0}, 0.5); TweenUI(BarFill, {BackgroundTransparency = 0}, 0.5); TweenUI(Spinner, {ImageTransparency = 0}, 0.5)
         task.wait(0.5)
 
-        -- Логика загрузки (Плавный фейк + ожидание ContentProvider)
-        local spinConn = RunService.RenderStepped:Connect(function(dt)
-            Spinner.Rotation = Spinner.Rotation + (dt * 300)
-        end)
-
+        local spinConn = RunService.RenderStepped:Connect(function(dt) Spinner.Rotation = Spinner.Rotation + (dt * 300) end)
         local progress = 0
         while progress < 100 do
             local queue = ContentProvider.RequestQueueSize
             local jump = math.random(1, 5)
-            if queue > 0 then jump = jump * 0.5 end -- Замедляем, если игра еще грузится
-            
+            if queue > 0 then jump = jump * 0.5 end 
             progress = math.clamp(progress + jump, 0, 100)
             LoadText.Text = "loading: " .. tostring(math.floor(progress)) .. "%"
-            Tween(BarFill, {Size = UDim2.new(progress/100, 0, 1, 0)}, 0.1)
+            TweenUI(BarFill, {Size = UDim2.new(progress/100, 0, 1, 0)}, 0.1)
             task.wait(0.05)
         end
         LoadText.Text = "loading: complete!"
         task.wait(0.5)
 
-        -- Исчезновение загрузки
         spinConn:Disconnect()
-        Tween(Overlay, {BackgroundTransparency = 1}, 0.5)
-        Tween(LoadBox, {BackgroundTransparency = 1}, 0.5); Tween(LoadStroke, {Transparency = 1}, 0.5)
-        Tween(LoadText, {TextTransparency = 1}, 0.5); Tween(BarBg, {BackgroundTransparency = 1}, 0.5); Tween(BarFill, {BackgroundTransparency = 1}, 0.5)
-        Tween(Spinner, {ImageTransparency = 1}, 0.5)
+        if config.LoadingBackgroundImage then TweenUI(BgImg, {ImageTransparency = 1}, 0.5) end
+        TweenUI(Overlay, {BackgroundTransparency = 1}, 0.5)
+        TweenUI(LoadBox, {BackgroundTransparency = 1}, 0.5); TweenUI(LoadStroke, {Transparency = 1}, 0.5)
+        TweenUI(LoadText, {TextTransparency = 1}, 0.5); TweenUI(BarBg, {BackgroundTransparency = 1}, 0.5); TweenUI(BarFill, {BackgroundTransparency = 1}, 0.5)
+        TweenUI(Spinner, {ImageTransparency = 1}, 0.5)
         task.wait(0.5)
         LoadGui:Destroy()
     end
 
-    ScreenGui.Enabled = true -- Показываем главное меню
+    ScreenGui.Enabled = true
 
-    -- === ОСНОВНОЕ МЕНЮ ===
     local MainFrame = Create("Frame", { Size = UDim2.new(0, 680, 0, 430), Position = UDim2.new(0.5, -340, 0.5, -215), BackgroundColor3 = Theme.Background, BorderSizePixel = 0, Parent = ScreenGui, Active = true, Draggable = true, ClipsDescendants = true })
     Create("UIStroke", { Parent = MainFrame, Color = Theme.Outline, Thickness = 1 })
     
@@ -152,7 +135,6 @@ function Library:CreateWindow(config)
         if s and d then pcall(function() writefile("nex0_logo_custom.png", d) LogoImage.Image = getcustomasset("nex0_logo_custom.png") end) end
     end)
 
-    -- ФУНКЦИЯ ДЛЯ СМЕНЫ ТЕМЫ
     function Window:SetAccentColor(newColor)
         Theme.Accent = newColor
         for _, elem in pairs(ColoredElements.Backgrounds) do elem.BackgroundColor3 = newColor end
@@ -177,9 +159,9 @@ function Library:CreateWindow(config)
         local GroupboxesContainer = Create("Frame", { Size = UDim2.new(1, 0, 1, -30), Position = UDim2.new(0, 0, 0, 30), BackgroundTransparency = 1, Parent = TabContainer })
 
         TabBtn.MouseButton1Click:Connect(function()
-            if currentTab then Tween(currentTab.Text, {TextColor3 = Theme.TextDark}, 0.2); Tween(currentTab.Line, {BackgroundTransparency = 1}, 0.2); currentTab.Container.Visible = false end
+            if currentTab then TweenUI(currentTab.Text, {TextColor3 = Theme.TextDark}, 0.2); TweenUI(currentTab.Line, {BackgroundTransparency = 1}, 0.2); currentTab.Container.Visible = false end
             currentTab = { Btn = TabBtn, Text = TabText, Line = ActiveLine, Container = TabContainer }
-            Tween(TabText, {TextColor3 = Theme.TextWhite}, 0.2); Tween(ActiveLine, {BackgroundTransparency = 0}, 0.2); TabContainer.Visible = true
+            TweenUI(TabText, {TextColor3 = Theme.TextWhite}, 0.2); TweenUI(ActiveLine, {BackgroundTransparency = 0}, 0.2); TabContainer.Visible = true
         end)
         if #Window.Tabs == 0 then TabText.TextColor3 = Theme.TextWhite; ActiveLine.BackgroundTransparency = 0; TabContainer.Visible = true; currentTab = { Btn = TabBtn, Text = TabText, Line = ActiveLine, Container = TabContainer } end
         table.insert(Window.Tabs, Tab)
@@ -194,9 +176,9 @@ function Library:CreateWindow(config)
             local STabContainer = Create("Frame", { Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, Visible = false, Parent = GroupboxesContainer })
 
             STabBtn.MouseButton1Click:Connect(function()
-                if currentSubTab then Tween(currentSubTab.Btn, {TextColor3 = Theme.TextDark}, 0.2); Tween(currentSubTab.Line, {BackgroundTransparency = 1}, 0.2); currentSubTab.Container.Visible = false end
+                if currentSubTab then TweenUI(currentSubTab.Btn, {TextColor3 = Theme.TextDark}, 0.2); TweenUI(currentSubTab.Line, {BackgroundTransparency = 1}, 0.2); currentSubTab.Container.Visible = false end
                 currentSubTab = { Btn = STabBtn, Line = SActiveLine, Container = STabContainer }
-                Tween(STabBtn, {TextColor3 = Theme.TextWhite}, 0.2); Tween(SActiveLine, {BackgroundTransparency = 0}, 0.2); STabContainer.Visible = true
+                TweenUI(STabBtn, {TextColor3 = Theme.TextWhite}, 0.2); TweenUI(SActiveLine, {BackgroundTransparency = 0}, 0.2); STabContainer.Visible = true
             end)
             if #Tab.SubTabs == 0 then STabBtn.TextColor3 = Theme.TextWhite; SActiveLine.BackgroundTransparency = 0; STabContainer.Visible = true; currentSubTab = { Btn = STabBtn, Line = SActiveLine, Container = STabContainer } end
             table.insert(Tab.SubTabs, SubTab)
@@ -221,7 +203,7 @@ function Library:CreateWindow(config)
                     
                     ToggleFrame.MouseButton1Click:Connect(function() 
                         state = not state 
-                        Tween(Box, {BackgroundColor3 = state and Theme.Accent or Theme.ElementBg}, 0.15)
+                        TweenUI(Box, {BackgroundColor3 = state and Theme.Accent or Theme.ElementBg}, 0.15)
                         if state then table.insert(ColoredElements.Backgrounds, Box) else 
                             for i, v in ipairs(ColoredElements.Backgrounds) do if v == Box then table.remove(ColoredElements.Backgrounds, i) end end 
                         end
@@ -246,7 +228,7 @@ function Library:CreateWindow(config)
                         if dragging and i.UserInputType == Enum.UserInputType.MouseMovement then
                             local pct = math.clamp((Mouse.X - Track.AbsolutePosition.X) / Track.AbsoluteSize.X, 0, 1)
                             val = math.floor(min + ((max - min) * pct))
-                            Tween(Fill, {Size = UDim2.new(pct, 0, 1, 0)}, 0.05)
+                            TweenUI(Fill, {Size = UDim2.new(pct, 0, 1, 0)}, 0.05)
                             InfoText.Text = text .. " : " .. tostring(val)
                             callback(val)
                         end
@@ -312,7 +294,7 @@ function Library:CreateWindow(config)
                     local open = false
                     TopBtn.MouseButton1Click:Connect(function()
                         open = not open
-                        Tween(CPContainer, {Size = UDim2.new(1, 0, 0, open and 110 or 20)}, 0.2)
+                        TweenUI(CPContainer, {Size = UDim2.new(1, 0, 0, open and 110 or 20)}, 0.2)
                     end)
                     task.spawn(function() UpdateColor() end)
                 end
@@ -332,7 +314,6 @@ function Library:CreateWindow(config)
                         btn.MouseButton1Click:Connect(function()
                             for _, b in ipairs(buttons) do 
                                 b.TextColor3 = Theme.TextDark 
-                                -- Удаляем старые тексты из регистра цветов
                                 for idx, v in ipairs(ColoredElements.Texts) do if v == b then table.remove(ColoredElements.Texts, idx) end end
                             end
                             btn.TextColor3 = Theme.Accent
@@ -343,6 +324,38 @@ function Library:CreateWindow(config)
                     task.spawn(function() callback(items[defaultIdx]) end)
                 end
 
+                -- НОВЫЙ ЭЛЕМЕНТ: БИНД КЛАВИШ
+                function GroupBox:AddBind(text, defaultKey, callback)
+                    local key = defaultKey
+                    local BindFrame = Create("Frame", { Size = UDim2.new(1, 0, 0, 20), BackgroundTransparency = 1, Parent = ItemsContainer })
+                    Create("TextLabel", { Size = UDim2.new(1, -60, 1, 0), BackgroundTransparency = 1, Text = text, TextColor3 = Theme.TextWhite, Font = Theme.Font, TextSize = 13, TextXAlignment = Enum.TextXAlignment.Left, Parent = BindFrame })
+                    
+                    local BindBtn = Create("TextButton", { Size = UDim2.new(0, 50, 0, 16), Position = UDim2.new(1, -50, 0, 2), BackgroundColor3 = Theme.ElementBg, Text = key.Name, TextColor3 = Theme.TextWhite, Font = Theme.Font, TextSize = 12, Parent = BindFrame })
+                    local Stroke = Create("UIStroke", { Parent = BindBtn, Color = Theme.Outline, Thickness = 1 })
+                    
+                    local listening = false
+                    BindBtn.MouseButton1Click:Connect(function()
+                        listening = true
+                        BindBtn.Text = "..."
+                        Stroke.Color = Theme.Accent
+                    end)
+                    
+                    UserInputService.InputBegan:Connect(function(input, gpe)
+                        if listening then
+                            if input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode ~= Enum.KeyCode.Unknown then
+                                key = input.KeyCode
+                                BindBtn.Text = key.Name
+                                Stroke.Color = Theme.Outline
+                                listening = false
+                            end
+                        elseif not gpe then
+                            if input.KeyCode == key and key ~= Enum.KeyCode.Unknown then
+                                callback(key)
+                            end
+                        end
+                    end)
+                end
+
                 return GroupBox
             end
             return SubTab
@@ -350,13 +363,11 @@ function Library:CreateWindow(config)
         return Tab
     end
     
-    -- 100% Рабочее скрытие окна (не работает, если игрок пишет в чат)
     UserInputService.InputBegan:Connect(function(input, gpe)
         if not gpe and input.KeyCode == Window.ToggleKey then 
             ScreenGui.Enabled = not ScreenGui.Enabled 
         end
     end)
-
     return Window
 end
 
