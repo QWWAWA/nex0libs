@@ -301,3 +301,4 @@ function MacOSLibrary:CreateWindow(config)
     end
     return WindowData
 end
+return MacOSLibrary
