@@ -857,7 +857,7 @@ function Component.Label(parent, theme, cfg)
     })
     makeLabel({ Text = cfg.Text, Color = cfg.Color or theme.TextDim,
         TextSize = cfg.TextSize or theme.TextSize,
-        Position = UDim2.new(1, 12, 0, 0), Size = UDim2.new(1, -24, 1, 0), Parent = holder })
+        Position = UDim2.new(0, 12, 0, 0), Size = UDim2.new(1, -24, 1, 0), Parent = holder })
     return { Frame = holder, Set = function(t) holder:FindFirstChildWhichIsA("TextLabel").Text = t end }
 end
 
