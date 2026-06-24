@@ -47,8 +47,14 @@ local function httpRequest(url)
     return res.Body, res.StatusCode or (res.Success and 200)
 end
 
-local function jsonEncode(t) local ok, s = pcall(function() return HttpService:JSONEncode(t) end) return ok and s end end
-local function jsonDecode(s) local ok, t = pcall(function() return HttpService:JSONDecode(s) end) return ok and t end end
+local function jsonEncode(t)
+    local ok, s = pcall(function() return HttpService:JSONEncode(t) end)
+    if ok then return s end
+end
+local function jsonDecode(s)
+    local ok, t = pcall(function() return HttpService:JSONDecode(s) end)
+    if ok then return t end
+end
 
 --==========================================================================
 -- Theme
