@@ -359,7 +359,7 @@ function Library:CreateWindow(cfg)
         RunService.RenderStepped:Connect(function()
             frames = frames + 1
             if tick() - t0 >= 1 then fps = frames; frames = 0; t0 = tick() end
-            local ping = LocalPlayer:GetNetworkPing and math.floor(LocalPlayer:GetNetworkPing() * 1000) or 0
+            local ping = (LocalPlayer.GetNetworkPing and LocalPlayer:GetNetworkPing()) and math.floor(LocalPlayer:GetNetworkPing() * 1000) or 0
             wm.Text = ("  skeet.cc | %d fps | %dms  "):format(fps, ping)
         end)
     end
